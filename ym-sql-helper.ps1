@@ -113,7 +113,11 @@ Function ParallelExecSQL {
         [int]$Parallelcount = 4
     )
 
-    $files = Get-ChildItem $TableSQLFilePath
+    $files = @(Get-ChildItem $TableSQLFilePath)
+
+    if ($files.Length -eq 0) {
+        return
+    }
     
     Remove-Job *
 
