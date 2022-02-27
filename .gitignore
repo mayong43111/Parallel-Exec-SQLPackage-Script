@@ -1,3 +1,6 @@
 .vscode
 deploy-report.xml
 deploy.sql
+
+TableAsSelectSQL/
+TableRebuildSQL/
