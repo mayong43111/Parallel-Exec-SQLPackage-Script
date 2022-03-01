@@ -1,3 +1,8 @@
+if (!(Get-Module -ListAvailable -Name SqlServer)) {
+    Write-Host "SqlServer Module does not exist"
+    Install-Module -Name SqlServer
+}
+
 function SplitSqlPackageScript {
     param (
         [string]$ReportFilePath,
