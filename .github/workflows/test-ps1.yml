@@ -22,20 +22,20 @@ jobs:
         
       - name: create dist
         run: |
-          $EXIST=(Test-Path '${{$DIST_PATH}'})
-          if($EXIST){ remove-Item -Recurse -Force '${{$DIST_PATH}' }
-          New-Item '${{$DIST_PATH}' -Type directory -Force
+          $EXIST=(Test-Path '${{env.DIST_PATH}'})
+          if($EXIST){ remove-Item -Recurse -Force '${{env.DIST_PATH}' }
+          New-Item '${{env.DIST_PATH}' -Type directory -Force
           
       - name: Collect Dacpac files
         run: |
           $files=@(Get-ChildItem -Path 'Magellan.DataWarehouse.YMDB' -Filter "*.dacpac" -recurse)
-          foreach($f in $files){ xcopy $f.FullName '${{$DIST_PATH}' /y }
+          foreach($f in $files){ xcopy $f.FullName '${{env.DIST_PATH}' /y }
       
       - name: Generate SQLScript
         run: |
           import-module FindSqlPackagePath.ps1 -Force
           $sqlpackage = Get-SqlPackageOnTargetMachine
-          &$sqlpackage /Action:Script /OutputPath:'${{$DIST_PATH}\YMDB_${{github.job}}.sql' /DeployReportPath:'$DIST_PATH\${{github.job}}.xml' /SourceFile:'${{$DIST_PATH}\YMDB_Magellan.DataWarehouse.YMDB.dacpac' /TargetConnectionString:${{ secrets.DW_CONN_STRING }}
+          &$sqlpackage /Action:Script /OutputPath:'${{env.DIST_PATH}\YMDB_${{github.job}}.sql' /DeployReportPath:'${{env.DIST_PATH}\${{github.job}}.xml' /SourceFile:'${{env.DIST_PATH}\YMDB_Magellan.DataWarehouse.YMDB.dacpac' /TargetConnectionString:${{ secrets.DW_CONN_STRING }}
           
       
 
