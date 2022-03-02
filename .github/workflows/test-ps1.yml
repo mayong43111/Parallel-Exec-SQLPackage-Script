@@ -35,7 +35,7 @@ jobs:
         run: |
           import-module .\FindSqlPackagePath.ps1 -Force
           $sqlpackage = Get-SqlPackageOnTargetMachine
-          &$sqlpackage /Action:Script /DeployScriptPath:'${{env.DIST_PATH}}\YMDB_${{github.run_number}}.sql' /DeployReportPath:'YMDB_${{env.DIST_PATH}}\${{github.run_number}}.xml' /SourceFile:'${{env.DIST_PATH}}\Magellan.DataWarehouse.YMDB.dacpac' /TargetConnectionString:"${{ secrets.DW_CONN_STRING }}"
+          &$sqlpackage /Action:Script /DeployScriptPath:'${{env.DIST_PATH}}\YMDB_${{github.run_number}}.sql' /DeployReportPath:'${{env.DIST_PATH}}\YMDB_${{github.run_number}}.xml' /SourceFile:'${{env.DIST_PATH}}\Magellan.DataWarehouse.YMDB.dacpac' /TargetConnectionString:"${{ secrets.DW_CONN_STRING }}"
           
       - name: Parallel Exec SQL
         working-directory: ${{env.DIST_PATH}}
