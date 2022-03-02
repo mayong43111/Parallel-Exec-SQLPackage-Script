@@ -40,7 +40,7 @@ jobs:
       - name: Parallel Exec SQL
         working-directory: ${{env.DIST_PATH}}
         run: |
-          import-module .\ym-sql-helper.ps1 -Force
+          import-module ..\ym-sql-helper.ps1 -Force
           SplitSqlPackageScript -ReportFilePath 'YMDB_${{github.run_number}}.xml' -SqlFilePath 'YMDB_${{github.run_number}}.sql'
           ParallelExecAllScript -ConnString "${{ secrets.DW_CONN_STRING }}" -Parallelcount 4
           
