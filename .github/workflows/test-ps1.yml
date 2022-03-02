@@ -28,7 +28,7 @@ jobs:
         working-directory: Magellan.DataWarehouse.YMDB
         run: |
           $CONFIG_PATH='..\dist'
-          xcopy 'Magellan.DataWarehouse.YMDB\*.dacpac' $CONFIG_PATH /S
+          xcopy '*.dacpac' $CONFIG_PATH /S
 
         
       
