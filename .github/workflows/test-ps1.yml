@@ -24,18 +24,18 @@ jobs:
         run: |
           $EXIST=(Test-Path $CONFIG_PATH)
           if($EXIST){ remove-Item -Recurse -Force $CONFIG_PATH }
-          New-Item $CONFIG_PATH -Type directory -Force
+          New-Item $DIST_PATH -Type directory -Force
           
       - name: Collect Dacpac files
         run: |
           $files=@(Get-ChildItem -Path 'Magellan.DataWarehouse.YMDB' -Filter "*.dacpac" -recurse)
-          foreach($f in $files){ xcopy $f.FullName $CONFIG_PATH /y }
+          foreach($f in $files){ xcopy $f.FullName $DIST_PATH /y }
       
       - name: Generate SQLScript
         run: |
           import-module FindSqlPackagePath.ps1 -Force
           $sqlpackage = Get-SqlPackageOnTargetMachine
-          &$sqlpackage /Action:Script /OutputPath:'$CONFIG_PATH\YMDB_${{github.job}}.sql' /DeployReportPath:'$CONFIG_PATH\${{github.job}}.xml' /SourceFile:'$CONFIG_PATH\YMDB_Magellan.DataWarehouse.YMDB.dacpac' /TargetConnectionString:${{ secrets.DW_CONN_STRING }}
+          &$sqlpackage /Action:Script /OutputPath:'$CONFIG_PATH\YMDB_${{github.job}}.sql' /DeployReportPath:'$DIST_PATH\${{github.job}}.xml' /SourceFile:'$DIST_PATH\YMDB_Magellan.DataWarehouse.YMDB.dacpac' /TargetConnectionString:${{ secrets.DW_CONN_STRING }}
           
       
 
