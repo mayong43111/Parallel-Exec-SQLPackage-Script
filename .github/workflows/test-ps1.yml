@@ -3,6 +3,9 @@ name: Build and deploy sqlproj to an DW
 on:
   workflow_dispatch:
 
+env:
+  DIST_PATH: .\dist
+
 jobs:
   build:
     runs-on: [self-hosted]
@@ -19,16 +22,22 @@ jobs:
         
       - name: create dist
         run: |
-          $CONFIG_PATH='.\dist'
           $EXIST=(Test-Path $CONFIG_PATH)
           if($EXIST){ remove-Item -Recurse -Force $CONFIG_PATH }
           New-Item $CONFIG_PATH -Type directory -Force
           
       - name: Collect Dacpac files
-        working-directory: Magellan.DataWarehouse.YMDB
         run: |
-          $CONFIG_PATH='..\dist'
-          xcopy '*.dacpac' $CONFIG_PATH /S
+          $files=@(Get-ChildItem -Path 'Magellan.DataWarehouse.YMDB' -Filter "*.dacpac" -recurse)
+          foreach($f in $files){ xcopy $f.FullName $CONFIG_PATH /y }
+      
+      - name: Generate SQLScript
+        run: |
+          import-module FindSqlPackagePath.ps1 -Force
+          $sqlpackage = Get-SqlPackageOnTargetMachine
+          &$sqlpackage /Action:Script /OutputPath:'$CONFIG_PATH\YMDB_${{github.job}}.sql' /DeployReportPath:'$CONFIG_PATH\${{github.job}}.xml' /SourceFile:'$CONFIG_PATH\YMDB_Magellan.DataWarehouse.YMDB.dacpac' /TargetConnectionString:${{ secrets.DW_CONN_STRING }}
+          
+      
 
         
       
