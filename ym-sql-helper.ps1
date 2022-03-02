@@ -1,6 +1,11 @@
-if (!(Get-Module -ListAvailable -Name SqlServer)) {
-    Write-Host "SqlServer Module does not exist"
-    Install-Module -Name SqlServer
+Import-Module .\InvokeSqlcmd.ps1 -Force
+
+function ImportSqlServer {
+
+    if (!(Get-Module -ListAvailable -Name SqlServer)) {
+        Write-Host "SqlServer Module does not exist"
+        Install-Module -Name SqlServer -Force
+    }
 }
 
 function SplitSqlPackageScript {
@@ -99,6 +104,8 @@ Function ParallelExecSQL {
         [int]$Parallelcount = 4
     )
 
+    ImportSqlServer
+
     $files = @(Get-ChildItem $TableSQLFilePath)
 
     if ($files.Length -eq 0) {
@@ -119,8 +126,9 @@ Function ParallelExecSQL {
         )
         $completed = $true
 
-        try { 
-            Invoke-Sqlcmd -connectionString $connString -Inputfile $file
+        try {
+            InvokeSqlcmd -connectionString $connString -Inputfile $file
+            #Invoke-Sqlcmd -connectionString $connString -Inputfile $file
         }
         catch {
             $completed = $false 
