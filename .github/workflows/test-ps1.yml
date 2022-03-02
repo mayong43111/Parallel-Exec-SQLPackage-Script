@@ -22,7 +22,7 @@ jobs:
         
       - name: create dist
         run: |
-          $EXIST=(Test-Path $CONFIG_PATH)
+          $EXIST=(Test-Path $DIST_PATH)
           if($EXIST){ remove-Item -Recurse -Force $CONFIG_PATH }
           New-Item $DIST_PATH -Type directory -Force
           
