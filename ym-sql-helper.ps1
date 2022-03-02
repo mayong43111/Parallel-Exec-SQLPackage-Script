@@ -1,5 +1,3 @@
-Import-Module $PSScriptRoot\InvokeSqlcmd.ps1 -Force
-
 function ImportSqlServer {
 
     if (!(Get-Module -ListAvailable -Name SqlServer)) {
@@ -104,8 +102,6 @@ Function ParallelExecSQL {
         [int]$Parallelcount = 4
     )
 
-    ImportSqlServer
-
     $files = @(Get-ChildItem $TableSQLFilePath)
 
     if ($files.Length -eq 0) {
@@ -127,6 +123,8 @@ Function ParallelExecSQL {
         $completed = $true
 
         try {
+            Import-Module $PSScriptRoot\InvokeSqlcmd.ps1 -Force
+            
             InvokeSqlcmd -connectionString $connString -Inputfile $file
             #Invoke-Sqlcmd -connectionString $connString -Inputfile $file
         }
