@@ -1,4 +1,4 @@
-Import-Module .\InvokeSqlcmd.ps1 -Force
+Import-Module $PSScriptRoot\InvokeSqlcmd.ps1 -Force
 
 function ImportSqlServer {
 
