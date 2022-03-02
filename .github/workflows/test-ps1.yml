@@ -1,0 +1,34 @@
+name: Build and deploy sqlproj to an DW
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: [self-hosted]
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: setup-msbuild
+        uses: microsoft/setup-msbuild@v1.1
+        
+      - name: build sqlproj
+        working-directory: Magellan.DataWarehouse.YMDB
+        run: msbuild Magellan.DataWarehouse.YMDB.sln /t:rebuild /p:Configuration="Release"
+        
+      - name: create dist
+        run: |
+          $CONFIG_PATH=.\dist
+          $EXIST=(Test-Path $CONFIG_PATH)
+          if($EXIST){ remove-Item -Recurse -Force $CONFIG_PATH }
+          New-Item $CONFIG_PATH -Type directory -Force
+          
+      - name: Collect Dacpac files
+        run: |
+          $CONFIG_PATH=.\dist
+          xcopy *.dacpac $CONFIG_PATH /S
+
+        
+      
+      
