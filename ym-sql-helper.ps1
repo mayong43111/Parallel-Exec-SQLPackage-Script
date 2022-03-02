@@ -123,8 +123,8 @@ Function ParallelExecSQL {
         $completed = $true
 
         try {
-            Import-Module $PSScriptRoot\InvokeSqlcmd.ps1 -Force
-            
+            Import-Module .\InvokeSqlcmd.ps1 -Force
+
             InvokeSqlcmd -connectionString $connString -Inputfile $file
             #Invoke-Sqlcmd -connectionString $connString -Inputfile $file
         }
@@ -140,7 +140,7 @@ Function ParallelExecSQL {
 
     foreach ($i in 1..$Parallelcount) {
 
-        $job = Start-Job -ScriptBlock $task -Name "task$i" -ArgumentList $files[$i - 1].FullName, $ConnString
+        $job = Start-Job -WorkingDirectory $PSScriptRoot -ScriptBlock $task -Name "task$i" -ArgumentList $files[$i - 1].FullName, $ConnString
     }
 
     $nextIndex = $Parallelcount
@@ -156,7 +156,7 @@ Function ParallelExecSQL {
                 $taskCount--
                 if ($nextIndex -lt $files.Length) {   
                     $taskNumber = $nextIndex + 1
-                    $job = Start-Job -ScriptBlock $task -Name "task$taskNumber" -ArgumentList $files[$nextIndex].FullName, $connString
+                    $job = Start-Job -WorkingDirectory $PSScriptRoot -ScriptBlock $task -Name "task$taskNumber" -ArgumentList $files[$nextIndex].FullName, $connString
                     $nextIndex++
                 }
             }

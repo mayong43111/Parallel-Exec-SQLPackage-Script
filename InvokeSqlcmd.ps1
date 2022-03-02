@@ -2,7 +2,7 @@ function InvokeSqlcmd {
     param (
         [string]$ConnectionString,
         [string]$Query,
-        [string]$File
+        [string]$Inputfile
     )
 
     if ([string]::IsNullOrWhiteSpace($ConnectionString)) {
@@ -22,8 +22,8 @@ function InvokeSqlcmd {
         $database = $sb['Initial Catalog']
 
         
-        if (-not [string]::IsNullOrWhiteSpace($File)) {
-            Sqlcmd -I -S $server -d $database -U $userName -P $password -G -i $File
+        if (-not [string]::IsNullOrWhiteSpace($Inputfile)) {
+            Sqlcmd -I -S $server -d $database -U $userName -P $password -G -i $Inputfile
         }
         elseif (-not [string]::IsNullOrWhiteSpace($Query)) {
             Sqlcmd -I -S $server -d $database -U $userName -P $password -G -Q $Query
@@ -36,8 +36,8 @@ function InvokeSqlcmd {
 
         ImportSqlServer
 
-        if (-not [string]::IsNullOrWhiteSpace($File)) {
-            Invoke-Sqlcmd -connectionString $connString -Inputfile $File 
+        if (-not [string]::IsNullOrWhiteSpace($Inputfile)) {
+            Invoke-Sqlcmd -connectionString $connString -Inputfile $Inputfile 
         }
         elseif (-not [string]::IsNullOrWhiteSpace($Query)) {
             Invoke-Sqlcmd -connectionString $connString -Query $Query
