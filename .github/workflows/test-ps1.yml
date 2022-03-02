@@ -19,14 +19,14 @@ jobs:
         
       - name: create dist
         run: |
-          $CONFIG_PATH=./dist
+          $CONFIG_PATH='.\dist'
           $EXIST=(Test-Path $CONFIG_PATH)
           if($EXIST){ remove-Item -Recurse -Force $CONFIG_PATH }
           New-Item $CONFIG_PATH -Type directory -Force
           
       - name: Collect Dacpac files
         run: |
-          $CONFIG_PATH=./dist
+          $CONFIG_PATH='.\dist'
           xcopy *.dacpac $CONFIG_PATH /S
 
         
