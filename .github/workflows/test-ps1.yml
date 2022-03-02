@@ -35,7 +35,7 @@ jobs:
         run: |
           import-module .\FindSqlPackagePath.ps1 -Force
           $sqlpackage = Get-SqlPackageOnTargetMachine
-          &$sqlpackage /Action:Script /OutputPath:'${{env.DIST_PATH}}\YMDB_${{github.job}}.sql' /DeployReportPath:'${{env.DIST_PATH}}\${{github.job}}.xml' /SourceFile:'${{env.DIST_PATH}}\YMDB_Magellan.DataWarehouse.YMDB.dacpac' /TargetConnectionString:'${{ secrets.DW_CONN_STRING }}'
+          &$sqlpackage /Action:Script /DeployScriptPath:'${{env.DIST_PATH}}\YMDB_${{github.job}}.sql' /DeployReportPath:'${{env.DIST_PATH}}\${{github.job}}.xml' /SourceFile:'${{env.DIST_PATH}}\Magellan.DataWarehouse.YMDB.dacpac' /TargetConnectionString:"${{ secrets.DW_CONN_STRING }}"
           
       
 
