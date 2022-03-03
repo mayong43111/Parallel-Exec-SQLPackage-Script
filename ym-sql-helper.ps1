@@ -15,11 +15,48 @@ function SplitSqlPackageScript {
     [xml]$report = Get-Content $ReportFilePath
     $createTableAsSelects = ($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'CreateTableAsSelect' }).Item.Value
     $tableRebuilds = ($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'TableRebuild' }).Item.Value
+    $alterTables = (($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'Alter' }).Item | Where-Object { $_.Type -eq 'SqlTable' }).Value
 
     $script = Get-Content $SQLFilePath
 
     SplitSql -ScriptContent $script -TableNames $createTableAsSelects -TargetPath .\TableAsSelectSQL
     SplitSql -ScriptContent $script -TableNames $tableRebuilds -TargetPath .\TableRebuildSQL
+    SplitSql -ScriptContent $script -TableNames $alterTables -TargetPath .\AlterTablesSQL
+
+    SaveOtherSQL -ScriptContent $script -TargetPath .\OtherSQL
+}
+
+function SaveOtherSQL {
+    param (
+        $ScriptContent,
+        $TargetPath
+    )
+
+    $sql = @()
+    $continuous = $false;
+
+    for ($i = 0; $i -lt $ScriptContent.Length; $i = $i + 1) {
+
+        if ($ScriptContent[$i] -match '^\s*$') {
+
+            if ($continuous) {
+                continue
+            }
+
+            $continuous = $true
+        }
+        else {
+            $continuous = $false
+        }
+
+        $sql += $ScriptContent[$i]
+    }
+
+    If (Test-Path $TargetPath) {
+        Remove-Item $TargetPath -Force -Recurse
+    }
+    New-Item $TargetPath -Type directory -Force
+    Set-Content -value $sql -Encoding unicode  -LiteralPath  ($TargetPath + '\other.sql')
 }
 
 Function SplitSql {
@@ -45,29 +82,37 @@ Function SplitSql {
 
             if ($beginMatch -gt 0) {
                 $tableSQL += $ScriptContent[$i]
+
+                if ($ScriptContent[$i] -match '^GO\s*$') {
+                    $beginMatch -= 1;
+                }
+
+                $ScriptContent[$i] = ''
             }
             else {
 
-                $hit = $false
                 switch ($ScriptContent[$i]) {
-                    { $_ -match ('PRINT N''Create Table as Select on ' + $tableEscape + '') } { $hit = $true }
-                    { $_ -match ('PRINT N''Creating Primary Key unnamed constraint on ' + $tableEscape + '') } { $hit = $true }
-                    { $_ -match ('PRINT N''Starting rebuilding table ' + $tableEscape + '') } { $hit = $true }
+                    { $_ -eq '' } {  }
+
+                    { $_ -match ('^PRINT N''Create Table as Select on ' + $tableEscape + '') } { $beginMatch = 2 }
+                    { $_ -match ('^PRINT N''Creating Primary Key unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2 }
+                    
+                    { $_ -match ('^PRINT N''Starting rebuilding table ' + $tableEscape + '') } { $beginMatch = 2 }
+
+                    { $_ -match ('^PRINT N''Altering Table ' + $tableEscape + '') } { $beginMatch = 2 }
+                    { $_ -match ('^PRINT N''Creating Column Store Index ' + $tableEscape + '') } { $beginMatch = 2 }
                 }
 
-                if ($hit) {
+                if ($beginMatch -gt 0) {
                     $tableSQL += $ScriptContent[$i]
+                    $ScriptContent[$i] = ''
                     $beginMatch = 2
                 }
             }
-
-            if ( $ScriptContent[$i] -match 'GO') {
-                $beginMatch -= 1;
-            }
         }
 
-        $tableName = ([regex]::Matches($table , '(?<=\[)(.*?)(?=\])'))[1].Value
-        Set-Content -value  $tableSQL -Encoding unicode  -LiteralPath  ($TargetPath + '\' + $tableName + '.sql')
+        $fileName = $table.Replace(']', '').Replace('[', '').Replace('.', '_').Replace('\', '_').Replace('/', '_')
+        Set-Content -value  $tableSQL -Encoding unicode  -LiteralPath  ($TargetPath + '\' + $fileName + '.sql')
     }
 }
 
@@ -93,6 +138,8 @@ Function ParallelExecAllScript {
 
     ParallelExecSQL -TableSQLFilePath .\TableRebuildSQL\ -ConnString $ConnString -Parallelcount $Parallelcount
     ParallelExecSQL -TableSQLFilePath .\TableAsSelectSQL\ -ConnString $ConnString -Parallelcount $Parallelcount
+    ParallelExecSQL -TableSQLFilePath .\AlterTablesSQL -ConnString $ConnString -Parallelcount $Parallelcount
+    ParallelExecSQL -TableSQLFilePath .\OtherSQL\ -ConnString $ConnString -Parallelcount $Parallelcount
 }
 
 Function ParallelExecSQL {
@@ -122,6 +169,7 @@ Function ParallelExecSQL {
         )
         $completed = $true
 
+        $start = Get-Date
         try {
             Import-Module .\InvokeSqlcmd.ps1 -Force
 
@@ -130,13 +178,18 @@ Function ParallelExecSQL {
         }
         catch {
             $completed = $false 
-            Write-Warning "$file has an error occurred. $Error"
         }
 
+        $end = Get-Date
+        $total = $end - $start
+
         if ($completed) {
-            Write-Host "$file Completed"
+            Write-Host "[$total] $file Completed"
         }
-    };
+        else {
+            Write-Error "[$total] $file has an error occurred. $Error"
+        }
+    }
 
     foreach ($i in 1..$Parallelcount) {
 
