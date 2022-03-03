@@ -94,6 +94,8 @@ Function SplitSql {
                 switch ($ScriptContent[$i]) {
                     { $_ -eq '' } {  }
 
+                    { $_ -match ('^IF EXISTS \(select top 1 1 from ' + $tableEscape + '') } { $beginMatch = 1 }
+
                     { $_ -match ('^PRINT N''Create Table as Select on ' + $tableEscape + '') } { $beginMatch = 2 }
                     { $_ -match ('^PRINT N''Creating Primary Key unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2 }
                     
