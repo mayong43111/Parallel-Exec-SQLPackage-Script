@@ -1,6 +1,7 @@
 ﻿CREATE TABLE [dbo].[Countries]
 (
     CountryID int NOT NULL,
+    DisplayName2 nvarchar(255) NOT NULL,
     DisplayName nvarchar(255) NOT NULL,
     ZoneID int NOT NULL,
 )
