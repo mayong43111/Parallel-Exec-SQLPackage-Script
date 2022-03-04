@@ -96,13 +96,20 @@ Function SplitSql {
 
                     { $_ -match ('^IF EXISTS \(select top 1 1 from ' + $tableEscape + '') } { $beginMatch = 1 }
 
-                    { $_ -match ('^PRINT N''Create Table as Select on ' + $tableEscape + '') } { $beginMatch = 2 }
+                    { $_ -match ('^PRINT N''Dropping Default Constraint unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2 }
+                    { $_ -match ('^PRINT N''Creating Default Constraint unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2 }
+
+                    { $_ -match ('^PRINT N''Dropping Primary Key unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2 }
                     { $_ -match ('^PRINT N''Creating Primary Key unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2 }
-                    
+
+                    { $_ -match ('^PRINT N''Dropping Column Store Index ' + $tableEscape + '') } { $beginMatch = 2 }
+                    { $_ -match ('^PRINT N''Creating Column Store Index ' + $tableEscape + '') } { $beginMatch = 2 }
+
+                    { $_ -match ('^PRINT N''Create Table as Select on ' + $tableEscape + '') } { $beginMatch = 2 }
+  
                     { $_ -match ('^PRINT N''Starting rebuilding table ' + $tableEscape + '') } { $beginMatch = 2 }
 
                     { $_ -match ('^PRINT N''Altering Table ' + $tableEscape + '') } { $beginMatch = 2 }
-                    { $_ -match ('^PRINT N''Creating Column Store Index ' + $tableEscape + '') } { $beginMatch = 2 }
                 }
 
                 if ($beginMatch -gt 0) {
