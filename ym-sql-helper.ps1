@@ -92,30 +92,69 @@ Function SplitSql {
             else {
 
                 switch ($ScriptContent[$i]) {
-                    { $_ -eq '' } {  }
+                    { $_ -eq '' } { break; }
 
-                    { $_ -match ('^IF EXISTS \(select top 1 1 from ' + $tableEscape + '') } { $beginMatch = 1 }
+                    { $_ -match ('^IF EXISTS \(select top 1 1 from ' + $tableEscape + '') } { 
+                        
+                        for ($x = $i; $x -gt 40; $x = $x - 1) {
+                            
+                            if ($ScriptContent[$x] -match '^/\*') {
+                                
+                                for ($x; $x -lt $i; $x = $x + 1) {
 
-                    { $_ -match ('^PRINT N''Dropping Default Constraint unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2 }
-                    { $_ -match ('^PRINT N''Creating Default Constraint unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2 }
+                                    $tableSQL += $ScriptContent[$x]
+                                    $ScriptContent[$x] = ''
+                                }
+                                break
+                            }
+                        }
+                        
+                        $beginMatch = 1;                       
+                        break; 
+                    }
 
-                    { $_ -match ('^PRINT N''Dropping Primary Key unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2 }
-                    { $_ -match ('^PRINT N''Creating Primary Key unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2 }
+                    { $_ -match ('^PRINT N''Dropping Default Constraint unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2; break; }
+                    { $_ -match ('^PRINT N''Creating Default Constraint unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2; break; }
 
-                    { $_ -match ('^PRINT N''Dropping Column Store Index ' + $tableEscape + '') } { $beginMatch = 2 }
-                    { $_ -match ('^PRINT N''Creating Column Store Index ' + $tableEscape + '') } { $beginMatch = 2 }
+                    { $_ -match ('^PRINT N''Dropping Primary Key unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2; break; }
+                    { $_ -match ('^PRINT N''Creating Primary Key unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2; break; }
 
-                    { $_ -match ('^PRINT N''Create Table as Select on ' + $tableEscape + '') } { $beginMatch = 2 }
+                    { $_ -match ('^PRINT N''Dropping Column Store Index ' + $tableEscape + '') } { $beginMatch = 2; break; }
+                    { $_ -match ('^PRINT N''Creating Column Store Index ' + $tableEscape + '') } { $beginMatch = 2; break; }
+
+                    { $_ -match ('^PRINT N''Create Table as Select on ' + $tableEscape + '') } { $beginMatch = 2; break; }
   
-                    { $_ -match ('^PRINT N''Starting rebuilding table ' + $tableEscape + '') } { $beginMatch = 2 }
+                    { $_ -match ('^PRINT N''Starting rebuilding table ' + $tableEscape + '') } { $beginMatch = 2; break; }
 
-                    { $_ -match ('^PRINT N''Altering Table ' + $tableEscape + '') } { $beginMatch = 2 }
+                    { $_ -match ('^PRINT N''Altering Table ' + $tableEscape + '') } { $beginMatch = 2; break; }
+
+                    # drop or create Primary Key . PRINT PK name, but do not know it
+                    # must be placed last
+                    { $_ -match ('^PRINT N''Creating Primary Key ' + $tableEscape + '') } { $beginMatch = 2; break; }
+                    { $_ -match ('^PRINT N''Dropping Primary Key ' + $tableEscape + '') } { $beginMatch = 2; break; }
+                    { $_ -match ('^ALTER TABLE ' + $tableEscape + '') } {
+                        
+                        if (($ScriptContent[$i - 4] -match '^PRINT N''Creating Primary Key \[') -or ($ScriptContent[$i - 4] -match '^PRINT N''Dropping Primary Key \[')) {
+                            
+                            $tableSQL += $ScriptContent[$i - 4]
+                            $tableSQL += $ScriptContent[$i - 3]
+                            $tableSQL += $ScriptContent[$i - 2]
+                            $tableSQL += $ScriptContent[$i - 1]
+
+                            $ScriptContent[$i - 4] = ''
+                            $ScriptContent[$i - 3] = ''
+                            $ScriptContent[$i - 2] = ''
+                            $ScriptContent[$i - 1] = ''
+                        }
+                        
+                        $beginMatch = 1
+                        break 
+                    }
                 }
 
                 if ($beginMatch -gt 0) {
                     $tableSQL += $ScriptContent[$i]
                     $ScriptContent[$i] = ''
-                    $beginMatch = 2
                 }
             }
         }
