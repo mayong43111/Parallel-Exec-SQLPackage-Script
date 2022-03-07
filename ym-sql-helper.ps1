@@ -13,14 +13,19 @@ function SplitSqlPackageScript {
     )
 
     [xml]$report = Get-Content $ReportFilePath
-    $createTableAsSelects = ($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'CreateTableAsSelect' }).Item.Value
-    $tableRebuilds = ($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'TableRebuild' }).Item.Value
-    $alterTables = (($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'Alter' }).Item | Where-Object { $_.Type -eq 'SqlTable' }).Value
-
     $script = Get-Content $SQLFilePath
 
+    $drops = ($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'Drop' }).Item
+    $drops = ($drops | Where-Object { ($_.Type -eq 'SqlStatistic') -or ($_.Type -eq 'SqlSecurityPolicy') }).Value
+    SplitSql -ScriptContent $script -TableNames $drops -TargetPath .\PreSQL
+
+    $createTableAsSelects = ($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'CreateTableAsSelect' }).Item.Value
     SplitSql -ScriptContent $script -TableNames $createTableAsSelects -TargetPath .\TableAsSelectSQL
+
+    $tableRebuilds = ($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'TableRebuild' }).Item.Value
     SplitSql -ScriptContent $script -TableNames $tableRebuilds -TargetPath .\TableRebuildSQL
+    
+    $alterTables = (($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'Alter' }).Item | Where-Object { $_.Type -eq 'SqlTable' }).Value
     SplitSql -ScriptContent $script -TableNames $alterTables -TargetPath .\AlterTablesSQL
 
     SaveOtherSQL -ScriptContent $script -TargetPath .\OtherSQL
@@ -128,6 +133,9 @@ Function SplitSql {
 
                     { $_ -match ('^PRINT N''Altering Table ' + $tableEscape + '') } { $beginMatch = 2; break; }
 
+                    { $_ -match ('^PRINT N''Dropping Security policy ' + $tableEscape + '') } { $beginMatch = 2; break; }
+                    { $_ -match ('^PRINT N''Dropping Statistic ' + $tableEscape + '') } { $beginMatch = 2; break; }
+
                     # drop or create Primary Key . PRINT PK name, but do not know it
                     # must be placed last
                     { $_ -match ('^PRINT N''Creating Primary Key ' + $tableEscape + '') } { $beginMatch = 2; break; }
@@ -184,9 +192,12 @@ Function ParallelExecAllScript {
         [int]$Parallelcount = 4
     )
 
+    ParallelExecSQL -TableSQLFilePath .\PreSQL\ -ConnString $ConnString -Parallelcount $Parallelcount
+
     ParallelExecSQL -TableSQLFilePath .\TableRebuildSQL\ -ConnString $ConnString -Parallelcount $Parallelcount
     ParallelExecSQL -TableSQLFilePath .\TableAsSelectSQL\ -ConnString $ConnString -Parallelcount $Parallelcount
     ParallelExecSQL -TableSQLFilePath .\AlterTablesSQL -ConnString $ConnString -Parallelcount $Parallelcount
+
     ParallelExecSQL -TableSQLFilePath .\OtherSQL\ -ConnString $ConnString -Parallelcount $Parallelcount
 }
 
