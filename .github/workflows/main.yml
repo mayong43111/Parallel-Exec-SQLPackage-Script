@@ -1,0 +1,47 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Code Quality
+
+env:
+  DIST_PATH: .\dist
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  check:
+    # The type of runner that the job will run on
+    runs-on: [self-hosted]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      
+      - name: setup-msbuild
+        uses: microsoft/setup-msbuild@v1.1
+        
+      - name: build sqlproj
+        working-directory: Magellan.DataWarehouse.YMDB
+        run: msbuild Magellan.DataWarehouse.YMDB.sln /p:Configuration="Release" /p:RunSqlCodeAnalysis="True"
+        
+      - name: create dist
+        run: |
+          $EXIST=(Test-Path '${{env.DIST_PATH}}')
+          if($EXIST){ remove-Item -Recurse -Force '${{env.DIST_PATH}}' }
+          New-Item '${{env.DIST_PATH}}' -Type directory -Force
+
+      - name: Collect report
+        run: |
+          $files=@(Get-ChildItem -Path 'Magellan.DataWarehouse.YMDB' -Filter "*.StaticCodeAnalysis.Results.xml" -recurse)
+          foreach($f in $files){ xcopy $f.FullName '${{env.DIST_PATH}}' /y }
+          
+      - name: upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: StaticCodeAnalysis
+          path: ${{env.DIST_PATH}}
