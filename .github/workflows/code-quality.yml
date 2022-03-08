@@ -35,10 +35,19 @@ jobs:
           if($EXIST){ remove-Item -Recurse -Force '${{env.DIST_PATH}}' }
           New-Item '${{env.DIST_PATH}}' -Type directory -Force
 
-      - name: Collect report
+      - name: collect msbuild report
         run: |
           $files=@(Get-ChildItem -Path 'Magellan.DataWarehouse.YMDB' -Filter "*.StaticCodeAnalysis.Results.xml" -recurse)
           foreach($f in $files){ xcopy $f.FullName '${{env.DIST_PATH}}' /y }
+          
+      - name: setup-sqlcheck
+        run: |
+          If (Test-Path ".\sqlcheck.exe") { wget https://github.com/jarulraj/sqlcheck/releases/download/v1.2/sqlcheck.exe }
+          
+      - name: sqlcheck report
+        run: |
+          $files=@(Get-ChildItem -Path 'Magellan.DataWarehouse.YMDB' -Filter "*.sql" -recurse)
+          foreach($f in $files){ .\sqlcheck.exe -f $f.FullName > ('${{env.DIST_PATH}}\' + $f.Name + '.StaticCodeAnalysis.Results.txt') }  
           
       - name: upload artifact
         uses: actions/upload-artifact@v2
