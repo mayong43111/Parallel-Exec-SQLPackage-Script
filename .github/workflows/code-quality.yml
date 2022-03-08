@@ -42,7 +42,7 @@ jobs:
           
       - name: setup-sqlcheck
         run: |
-          If (Test-Path ".\sqlcheck.exe") { wget https://github.com/jarulraj/sqlcheck/releases/download/v1.2/sqlcheck.exe }
+          If (-not(Test-Path ".\sqlcheck.exe")) { wget https://github.com/jarulraj/sqlcheck/releases/download/v1.2/sqlcheck.exe -OutFile "sqlcheck.exe" }
           
       - name: sqlcheck report
         run: |
