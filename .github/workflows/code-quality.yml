@@ -27,7 +27,7 @@ jobs:
         
       - name: build sqlproj
         working-directory: Magellan.DataWarehouse.YMDB
-        run: msbuild Magellan.DataWarehouse.YMDB.sln /p:Configuration="Release" /p:RunSqlCodeAnalysis="True"
+        run: msbuild Magellan.DataWarehouse.YMDB.sln /p:Configuration="Release" /p:RunSqlCodeAnalysis="True" /p:SqlCodeAnalysisRules=""
         
       - name: create dist
         run: |
