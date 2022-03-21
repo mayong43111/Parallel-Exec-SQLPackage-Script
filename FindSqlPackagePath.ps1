@@ -48,7 +48,7 @@
         $dacPath = $sqlDacPath
     }
 
-    if ($dacPath -eq $null)
+    if ($null -eq $dacPath)
     {
         throw  "Unable to find the location of Dac Framework (SqlPackage.exe) from registry on machine $env:COMPUTERNAME"
     }

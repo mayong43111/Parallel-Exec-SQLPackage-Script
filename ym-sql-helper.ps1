@@ -15,20 +15,28 @@ function SplitSqlPackageScript {
     [xml]$report = Get-Content $ReportFilePath
     $script = Get-Content $SQLFilePath
 
+    foreach ($path in '.\PreSQL', '.\SplitSql', '.\OtherSQL') {
+
+        If (Test-Path $path) {
+            Remove-Item $path -Force -Recurse
+        }
+        New-Item $path -Type directory -Force
+    }
+
     $drops = ($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'Drop' }).Item
     $drops = ($drops | Where-Object { ($_.Type -eq 'SqlStatistic') -or ($_.Type -eq 'SqlSecurityPolicy') }).Value
     SplitSql -ScriptContent $script -TableNames $drops -TargetPath .\PreSQL
 
     $createTableAsSelects = ($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'CreateTableAsSelect' }).Item.Value
-    SplitSql -ScriptContent $script -TableNames $createTableAsSelects -TargetPath .\TableAsSelectSQL
+    SplitSql -ScriptContent $script -TableNames $createTableAsSelects -TargetPath .\SplitSql
 
     $tableRebuilds = ($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'TableRebuild' }).Item.Value
-    SplitSql -ScriptContent $script -TableNames $tableRebuilds -TargetPath .\TableRebuildSQL
+    SplitSql -ScriptContent $script -TableNames $tableRebuilds -TargetPath .\SplitSql
     
     $alterTables = (($report.DeploymentReport.Operations.Operation | Where-Object { $_.name -eq 'Alter' }).Item | Where-Object { $_.Type -eq 'SqlTable' }).Value
-    SplitSql -ScriptContent $script -TableNames $alterTables -TargetPath .\AlterTablesSQL
+    SplitSql -ScriptContent $script -TableNames $alterTables -TargetPath .\SplitSql
 
-    SaveOtherSQL -ScriptContent $script -TargetPath .\OtherSQL
+    # SaveOtherSQL -ScriptContent $script -TargetPath .\OtherSQL
 }
 
 function SaveOtherSQL {
@@ -70,11 +78,6 @@ Function SplitSql {
         $TableNames,
         $TargetPath
     )
-
-    If (Test-Path $TargetPath) {
-        Remove-Item $TargetPath -Force -Recurse
-    }
-    New-Item $TargetPath -Type directory -Force
 
     foreach ($table in $TableNames) {
         Write-Host $table 'is be extracted'
@@ -118,6 +121,8 @@ Function SplitSql {
                         break; 
                     }
 
+                    { $_ -match ('^PRINT N''Dropping SqlSecurityPolicy ' + $tableEscape + '') } { $beginMatch = 2; break; }
+
                     { $_ -match ('^PRINT N''Dropping Default Constraint unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2; break; }
                     { $_ -match ('^PRINT N''Creating Default Constraint unnamed constraint on ' + $tableEscape + '') } { $beginMatch = 2; break; }
 
@@ -160,6 +165,11 @@ Function SplitSql {
                     }
                 }
 
+                if ($ScriptContent[$i] -match ('^ALTER view') `
+                        -or $ScriptContent[$i] -match ('^ALTER PROC')) { 
+                    break;
+                }
+
                 if ($beginMatch -gt 0) {
                     $tableSQL += $ScriptContent[$i]
                     $ScriptContent[$i] = ''
@@ -194,9 +204,7 @@ Function ParallelExecAllScript {
 
     ParallelExecSQL -TableSQLFilePath .\PreSQL\ -ConnString $ConnString -Parallelcount $Parallelcount
 
-    ParallelExecSQL -TableSQLFilePath .\TableRebuildSQL\ -ConnString $ConnString -Parallelcount $Parallelcount
-    ParallelExecSQL -TableSQLFilePath .\TableAsSelectSQL\ -ConnString $ConnString -Parallelcount $Parallelcount
-    ParallelExecSQL -TableSQLFilePath .\AlterTablesSQL -ConnString $ConnString -Parallelcount $Parallelcount
+    ParallelExecSQL -TableSQLFilePath .\SplitSql\ -ConnString $ConnString -Parallelcount $Parallelcount
 
     ParallelExecSQL -TableSQLFilePath .\OtherSQL\ -ConnString $ConnString -Parallelcount $Parallelcount
 }
