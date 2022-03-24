@@ -4,12 +4,13 @@ description: Parallel Exec SQLPackage Script
 outputs:
   module_path:
     description: "module root path"
-    value: ${{ github.action_path }}
+    value: ${{ steps.setup.outputs.module_path }}
 
 runs:
   using: 'composite'
   steps:       
     - name: show module root path
+      id: setup
       run: |
-        echo "${{ github.action_path }}"
+        echo "::set-output name=module_path::${{ github.action_path }}"
       shell: pwsh
