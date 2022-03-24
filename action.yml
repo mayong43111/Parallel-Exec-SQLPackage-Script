@@ -2,7 +2,7 @@ name: Parallel-Exec-SQLPackage-Script
 description: Parallel Exec SQLPackage Script
 
 outputs:
-  module_path
+  module_path:
     description: "module root path"
     value: ${{ github.action_path }}
 
