@@ -12,3 +12,4 @@ runs:
     - name: show module root path
       run: |
         echo "${{ github.action_path }}"
+      shell: pwsh
