@@ -1,0 +1,14 @@
+name: Parallel-Exec-SQLPackage-Script
+description: Parallel Exec SQLPackage Script
+
+outputs:
+  module_path
+    description: "module root path"
+    value: ${{ github.action_path }}
+
+runs:
+  using: 'composite'
+  steps:       
+    - name: show module root path
+      run: |
+        echo "${{ github.action_path }}"
